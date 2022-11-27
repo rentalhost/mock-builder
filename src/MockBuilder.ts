@@ -58,6 +58,15 @@ export default class MockBuilder
         return response.status(200).send(requestBody);
     }
 
+    private static processDelete(path: string, response: NextApiResponse)
+    {
+        if (fs.existsSync(path)) {
+            fs.rmSync(path);
+        }
+
+        return response.status(200).send(null);
+    }
+
     static define(
         request: NextApiRequest,
         response: NextApiResponse,
@@ -72,6 +81,10 @@ export default class MockBuilder
 
         if (request.method === 'POST') {
             return this.processPost(path, request, response, options);
+        }
+
+        if (request.method === 'DELETE') {
+            return this.processDelete(path, response);
         }
 
         return response.status(501).json({ error: 'not implemented' });
