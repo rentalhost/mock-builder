@@ -8,16 +8,23 @@ import FileSystem from '@src/FileSystem';
 interface DefineOptionsInterface
 {
     format?: ZodSchema;
+
+    defaultValue?: unknown;
 }
 
 export default class MockBuilder
 {
     private static processGet(
         path: string,
-        response: NextApiResponse
+        response: NextApiResponse,
+        options?: DefineOptionsInterface
     )
     {
         if (!fs.existsSync(path)) {
+            if (options?.defaultValue) {
+                return response.status(200).json(options.defaultValue);
+            }
+
             return response.status(404).json({ error: 'file not found' });
         }
 
@@ -60,7 +67,7 @@ export default class MockBuilder
         const path = `./storage/${ request.url?.slice(5) }.json`;
 
         if (request.method === 'GET') {
-            return this.processGet(path, response);
+            return this.processGet(path, response, options);
         }
 
         if (request.method === 'POST') {
