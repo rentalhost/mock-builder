@@ -1,6 +1,7 @@
 import fs from "fs";
 
 import { NextApiRequest, NextApiResponse } from "next";
+import NextCors from "nextjs-cors";
 import { ZodSchema } from "zod";
 
 import FileSystem from "@src/FileSystem";
@@ -87,11 +88,16 @@ export default class MockBuilder {
     return response.status(200).send(null);
   }
 
-  static define(
+  static async define(
     request: NextApiRequest,
     response: NextApiResponse,
     options?: DefineOptionsInterface
   ) {
+    await NextCors(request, response, {
+      methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
+      origin: "*",
+    });
+
     const path = `./storage/${request.url?.slice(5)}.json`;
 
     if (request.method === "GET") {
