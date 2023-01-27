@@ -1,15 +1,15 @@
 {
-    "name": "mock-builder",
-    "version": "0.1.0",
-    "private": true,
-    "scripts": {
-        "dev": "next dev -p 3100"
-    },
-    "dependencies": {
-        "@types/node": "18.11.9",
-        "@types/react": "18.0.25",
-        "next": "13.0.5",
-        "typescript": "4.9.3",
-        "zod": "^3.19.1"
-    }
+  "name": "mock-builder",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3100"
+  },
+  "dependencies": {
+    "@types/node": "18.11.18",
+    "@types/react": "18.0.27",
+    "next": "13.1.5",
+    "typescript": "4.9.4",
+    "zod": "^3.20.2"
+  }
 }

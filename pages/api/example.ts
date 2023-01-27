@@ -1,6 +1,6 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+import type { NextApiRequest, NextApiResponse } from "next";
 
-import MockBuilder from '@src/MockBuilder';
+import MockBuilder from "@src/MockBuilder";
 
 export default (req: NextApiRequest, res: NextApiResponse) =>
-    MockBuilder.define(req, res)
+  MockBuilder.define(req, res);

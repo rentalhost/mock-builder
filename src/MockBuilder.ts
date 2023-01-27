@@ -1,92 +1,111 @@
-import fs from 'fs';
+import fs from "fs";
 
-import { NextApiRequest, NextApiResponse } from 'next';
-import { ZodSchema } from 'zod';
+import { NextApiRequest, NextApiResponse } from "next";
+import { ZodSchema } from "zod";
 
-import FileSystem from '@src/FileSystem';
+import FileSystem from "@src/FileSystem";
 
-interface DefineOptionsInterface
-{
-    format?: ZodSchema;
+interface DefineOptionsInterface {
+  format?: ZodSchema;
 
-    defaultValue?: unknown;
+  defaultValue?: unknown;
+
+  transform?: (
+    stored: any,
+    received: any
+  ) => {
+    stored: any;
+    received: any;
+  };
 }
 
-export default class MockBuilder
-{
-    private static processGet(
-        path: string,
-        response: NextApiResponse,
-        options?: DefineOptionsInterface
-    )
-    {
-        if (!fs.existsSync(path)) {
-            if (options?.defaultValue) {
-                return response.status(200).json(options.defaultValue);
-            }
+export default class MockBuilder {
+  private static processGet(
+    path: string,
+    response: NextApiResponse,
+    options?: DefineOptionsInterface
+  ) {
+    if (!fs.existsSync(path)) {
+      if (options?.defaultValue) {
+        return response.status(200).json(options.defaultValue);
+      }
 
-            return response.status(404).json({ error: 'file not found' });
-        }
-
-        return response.status(200).send(fs.readFileSync(path).toString());
+      return response.status(404).json({ error: "file not found" });
     }
 
-    private static processPost(
-        path: string,
-        request: NextApiRequest,
-        response: NextApiResponse,
-        options?: DefineOptionsInterface
-    )
-    {
-        let requestBody = request.body;
+    return response.status(200).send(fs.readFileSync(path).toString());
+  }
 
-        if (options?.format) {
-            const parse = options.format.safeParse(requestBody);
+  private static processPost(
+    path: string,
+    request: NextApiRequest,
+    response: NextApiResponse,
+    options?: DefineOptionsInterface
+  ) {
+    let requestBody = request.body;
 
-            if (!parse.success) {
-                return response.status(400).json({
-                    error:  'the data sent has an invalid format',
-                    issues: parse.error.issues
-                });
-            }
+    if (options?.format) {
+      const parse = options.format.safeParse(requestBody);
 
-            requestBody = parse.data;
-        }
+      if (!parse.success) {
+        return response.status(400).json({
+          error: "the data sent has an invalid format",
+          issues: parse.error.issues,
+        });
+      }
 
-        FileSystem.writeSync(path, JSON.stringify(requestBody));
-
-        return response.status(200).send(requestBody);
+      requestBody = parse.data;
     }
 
-    private static processDelete(path: string, response: NextApiResponse)
-    {
-        if (fs.existsSync(path)) {
-            fs.rmSync(path);
-        }
+    if (options?.transform) {
+      let stored = options?.defaultValue;
 
-        return response.status(200).send(null);
+      if (fs.existsSync(path)) {
+        stored = JSON.parse(fs.readFileSync(path).toString());
+      }
+
+      const { stored: storedAfter, received } = options.transform(
+        stored,
+        requestBody
+      );
+
+      FileSystem.writeSync(path, JSON.stringify(storedAfter ?? ""));
+
+      return response.status(200).send(received);
+    } else {
+      FileSystem.writeSync(path, JSON.stringify(requestBody));
     }
 
-    static define(
-        request: NextApiRequest,
-        response: NextApiResponse,
-        options?: DefineOptionsInterface
-    )
-    {
-        const path = `./storage/${ request.url?.slice(5) }.json`;
+    return response.status(200).send(requestBody);
+  }
 
-        if (request.method === 'GET') {
-            return this.processGet(path, response, options);
-        }
-
-        if (request.method === 'POST') {
-            return this.processPost(path, request, response, options);
-        }
-
-        if (request.method === 'DELETE') {
-            return this.processDelete(path, response);
-        }
-
-        return response.status(501).json({ error: 'not implemented' });
+  private static processDelete(path: string, response: NextApiResponse) {
+    if (fs.existsSync(path)) {
+      fs.rmSync(path);
     }
+
+    return response.status(200).send(null);
+  }
+
+  static define(
+    request: NextApiRequest,
+    response: NextApiResponse,
+    options?: DefineOptionsInterface
+  ) {
+    const path = `./storage/${request.url?.slice(5)}.json`;
+
+    if (request.method === "GET") {
+      return this.processGet(path, response, options);
+    }
+
+    if (request.method === "POST") {
+      return this.processPost(path, request, response, options);
+    }
+
+    if (request.method === "DELETE") {
+      return this.processDelete(path, response);
+    }
+
+    return response.status(501).json({ error: "not implemented" });
+  }
 }
